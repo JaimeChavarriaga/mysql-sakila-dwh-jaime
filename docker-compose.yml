@@ -1,0 +1,55 @@
+version: '3.3'
+
+# servicios a ejecutar
+services:
+
+  # MySQL: `mysql-salika`
+  mysql-sakila:
+    image: mysql:8.0.31
+    container_name: mysql-sakila
+    environment:
+      - MYSQL_DATABASE=sakila
+      - MYSQL_USER=sakila
+      - MYSQL_PASSWORD=secret
+      - MYSQL_ROOT_PASSWORD=secret
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - type: bind
+        source: ./scripts-para-contenedor
+        target: /docker-entrypoint-initdb.d
+      - type: bind
+        source: ./scripts
+        target: /scripts
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Administrador de Base datos: `phpmyadmin`
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=mysql-sakila
+
+  # Sistema de ETL: `etl-sakila`
+  keetle:
+    image: hiromuhota/webspoon
+    container_name: etl-sakila
+    ports:
+      - 8081:8080
+    expose:
+      - 8080
+    volumes:
+      - type: bind
+        source: ./sakila-etl
+        target: /home/tomcat/.kettle/data/sakila-etl
+
+
